@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="镍钛管弯曲刚度计算器：计算 EI、悬臂梁端部刚度，比较多组规格并生成报告。">
+  <title>镍钛管弯曲刚度计算器 | NiTi Tube Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">ENGINEERING TOOL · NiTi TUBE</p>
+      <h1>镍钛管弯曲刚度计算器</h1>
+      <p class="subtitle">计算材料弯曲刚度 EI、悬臂梁端部等效刚度，并进行多规格对比。</p>
+      <div class="hero-tags"><span>空心圆截面</span><span>多组对比</span><span>报告导出</span><span>长度曲线</span></div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <section class="notice">
+      <strong>模型说明</strong>
+      <p>本工具将镍钛管近似为均匀、各向同性、线弹性材料的空心圆截面梁。EI 为截面弯曲刚度，不随梁长变化；悬臂梁自由端受横向集中力时，端部等效刚度 k = 3EI/L³。</p>
+      <p class="warning">镍钛合金可能存在超弹性、应力诱发相变、温度依赖及非线性响应。本工具是初步工程估算，不替代实测、有限元分析或产品验证。</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><p class="eyebrow">01 / INPUT</p><h2>计算参数</h2></div>
+        <button id="addRowBtn" class="button secondary" type="button">＋ 添加规格</button>
+      </div>
+
+      <div class="global-controls">
+        <label class="field">
+          <span>弹性模量预设</span>
+          <select id="preset">
+            <option value="40">镍钛参考值：40 GPa（可修改）</option>
+            <option value="30">参考值：30 GPa（可修改）</option>
+            <option value="50">参考值：50 GPa（可修改）</option>
+            <option value="70">参考值：70 GPa（可修改）</option>
+            <option value="custom">自定义</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>默认弹性模量 E（GPa）</span>
+          <input id="defaultE" type="number" min="0.001" step="any" value="40">
+        </label>
+        <label class="field">
+          <span>曲线长度范围（mm）</span>
+          <div class="range-inputs">
+            <input id="curveMin" type="number" min="0.001" step="any" value="10" aria-label="曲线最小长度">
+            <span>至</span>
+            <input id="curveMax" type="number" min="0.002" step="any" value="150" aria-label="曲线最大长度">
+          </div>
+        </label>
+      </div>
+
+      <div class="table-scroll">
+        <table class="input-table">
+          <thead><tr><th>规格名称</th><th>长度 L (mm)</th><th>外径 OD (mm)</th><th>内径 ID (mm)</th><th>弹性模量 E (GPa)</th><th></th></tr></thead>
+          <tbody id="specRows"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="calculateBtn" class="button primary" type="button">计算刚度</button>
+        <button id="resetBtn" class="button text-button" type="button">恢复示例数据</button>
+        <span id="status" class="status" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><div><p class="eyebrow">02 / RESULTS</p><h2>计算结果</h2></div><span class="unit-note">结果基于上方输入参数</span></div>
+      <div class="table-scroll">
+        <table class="result-table">
+          <thead><tr><th>规格</th><th>截面惯性矩 I (mm⁴)</th><th>EI (N·mm²)</th><th>EI (N·m²)</th><th>悬臂梁端部刚度 k (N/mm)</th></tr></thead>
+          <tbody id="resultsBody"><tr><td colspan="5" class="empty">点击“计算刚度”查看结果</td></tr></tbody>
+        </table>
+      </div>
+      <div class="formula-grid">
+        <div class="formula"><span>空心圆截面惯性矩</span><code>I = π / 64 × (OD⁴ − ID⁴)</code></div>
+        <div class="formula"><span>材料弯曲刚度</span><code>EI = E × I</code></div>
+        <div class="formula"><span>悬臂梁端部等效刚度</span><code>k = 3EI / L³</code></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><div><p class="eyebrow">03 / COMPARISON</p><h2>多组规格对比</h2></div></div>
+      <div id="comparison" class="comparison-grid"><p class="empty">计算后显示各规格相对刚度。</p></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div><p class="eyebrow">04 / LENGTH CURVE</p><h2>弯曲刚度与长度关系</h2><p class="section-desc">展示悬臂梁端部等效刚度 k 随长度 L 的变化。EI 为常数，k 与 L³ 成反比。</p></div>
+      </div>
+      <div class="chart-wrap"><canvas id="lengthChart" aria-label="悬臂梁端部刚度与长度关系曲线" role="img"></canvas></div>
+      <div id="chartLegend" class="legend"></div>
+    </section>
+
+    <section class="panel report-panel">
+      <div class="section-head"><div><p class="eyebrow">05 / REPORT</p><h2>计算报告</h2></div></div>
+      <p class="section-desc">报告包含输入参数、计算结果、公式和模型假设。可导出 CSV 数据，或打印/另存为 PDF。</p>
+      <div class="actions">
+        <button id="csvBtn" class="button secondary" type="button">导出 CSV</button>
+        <button id="printBtn" class="button primary" type="button">生成 / 打印报告</button>
+      </div>
+      <p class="footnote">提示：浏览器打印窗口中选择“另存为 PDF”，即可保存 PDF 报告。</p>
+    </section>
+
+    <footer>
+      <p>NiTi Tube Bending Stiffness Calculator · GitHub Pages 静态网页</p>
+      <p>仅供工程估算与教育用途。请核实材料弹性模量、边界条件、温度及实际测试方法。</p>
+    </footer>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
